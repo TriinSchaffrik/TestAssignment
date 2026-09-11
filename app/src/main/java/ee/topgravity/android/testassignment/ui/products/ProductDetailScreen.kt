@@ -21,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import ee.topgravity.android.testassignment.data.model.Product
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,8 +30,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.BrokenImage
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.draw.clip
-
+import coil3.compose.SubcomposeAsyncImage
 @Composable
 fun ProductDetailScreen(
     product: Product,
@@ -40,21 +41,9 @@ fun ProductDetailScreen(
 ) {
     Scaffold(
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .height(56.dp)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
-                    )
-                }
-            }
+            ProductDetailTopBar(
+                onBack = onBack
+            )
         }
     ) { innerPadding ->
         Column(
@@ -65,54 +54,133 @@ fun ProductDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            val pagerState = rememberPagerState { product.images.count() }
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp)
-            ) { i ->
-                AsyncImage(
-                    model = product.images[i],
-                    contentDescription = product.title,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                repeat(product.images.size) { index ->
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 3.dp)
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (index == pagerState.currentPage) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                    )
-                }
-            }
+            ProductImagePager(
+                product = product
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = product.title,
-                style = MaterialTheme.typography.headlineMedium
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = product.description,
-                style = MaterialTheme.typography.bodyLarge
+            ProductInfo(
+                product = product
             )
         }
+    }
+}
+
+@Composable
+private fun ProductDetailTopBar(
+    onBack: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .height(56.dp)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back"
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProductImagePager(
+    product: Product
+) {
+    val pagerState = rememberPagerState {
+        product.images.size
+    }
+
+    Column {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) { page ->
+            SubcomposeAsyncImage(
+                model = product.images[page],
+                contentDescription = product.title,
+                modifier = Modifier.fillMaxWidth(),
+                loading = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                },
+                error = {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BrokenImage,
+                            contentDescription = "Error loading image",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            )
+        }
+
+        ProductPagerIndicator(
+            pageCount = product.images.size,
+            currentPage = pagerState.currentPage
+        )
+    }
+}
+
+@Composable
+private fun ProductPagerIndicator(
+    pageCount: Int,
+    currentPage: Int
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        repeat(pageCount) { index ->
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 3.dp)
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (index == currentPage) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                                .copy(alpha = 0.5f)
+                        }
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProductInfo(
+    product: Product
+) {
+    Column {
+        Text(
+            text = product.title,
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = product.description,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }

@@ -25,9 +25,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import ee.topgravity.android.testassignment.R
 import ee.topgravity.android.testassignment.data.model.Product
 import org.koin.androidx.compose.koinViewModel
 
@@ -55,7 +56,7 @@ fun ProductListScreen(
 
                 is ProductListState.Success -> {
                     if (currentState.products.isEmpty()) {
-                        ErrorContent("No products available") { viewModel.retryLoading() }
+                        ErrorContent(stringResource(id = R.string.error_no_products)) { viewModel.retryLoading() }
                     } else {
                         ProductList(currentState.products, onProductClick)
                     }
@@ -131,7 +132,7 @@ private fun ErrorContent(message: String, onRetry: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(onClick = onRetry) {
-                Text("Retry")
+                Text(stringResource(id = R.string.btn_retry))
             }
         }
     }
