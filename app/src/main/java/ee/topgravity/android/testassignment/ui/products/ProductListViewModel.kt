@@ -33,4 +33,9 @@ class ProductListViewModel(
             }
         }
     }
+
+    fun retryLoading() {
+        _state.value = ProductListState.Loading
+        loadProducts()
+    }
 }

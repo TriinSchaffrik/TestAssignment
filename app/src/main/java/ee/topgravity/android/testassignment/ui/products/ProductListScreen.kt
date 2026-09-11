@@ -1,7 +1,11 @@
 package ee.topgravity.android.testassignment.ui.products
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,7 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import ee.topgravity.android.testassignment.data.model.Product
 import org.koin.androidx.compose.koinViewModel
@@ -28,17 +38,29 @@ fun ProductListScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    when (val currentState = state) {
-        ProductListState.Loading -> {
-            LoadingContent()
-        }
+    Scaffold { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            when (val currentState = state) {
+                ProductListState.Loading -> {
+                    LoadingContent()
+                }
 
-        is ProductListState.Error -> {
-            ErrorContent(currentState.message)
-        }
+                is ProductListState.Error -> {
+                    ErrorContent(currentState.message) { viewModel.retryLoading() }
+                }
 
-        is ProductListState.Success -> {
-            ProductList(currentState.products, onProductClick)
+                is ProductListState.Success -> {
+                    if (currentState.products.isEmpty()) {
+                        ErrorContent("No products available") { viewModel.retryLoading() }
+                    } else {
+                        ProductList(currentState.products, onProductClick)
+                    }
+                }
+            }
         }
     }
 }
@@ -55,6 +77,10 @@ fun ProductList(
             ProductItem(product) {
                 onProductClicked(product)
             }
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 30.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
         }
     }
 }
@@ -63,7 +89,7 @@ fun ProductList(
 fun ProductItem(item: Product, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(item.title) },
-        trailingContent = { 
+        leadingContent = {
             AsyncImage(
                 model = item.thumbnail,
                 contentDescription = item.description,
@@ -73,8 +99,10 @@ fun ProductItem(item: Product, onClick: () -> Unit) {
                     .clip(RoundedCornerShape(4.dp))
             ) 
         },
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 5.dp),
+        )
 }
 
 @Composable
@@ -88,11 +116,23 @@ fun LoadingContent() {
 }
 
 @Composable
-private fun ErrorContent(message: String) {
+private fun ErrorContent(message: String, onRetry: () -> Unit) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(message)
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = message)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(onClick = onRetry) {
+                Text("Retry")
+            }
+        }
     }
 }
