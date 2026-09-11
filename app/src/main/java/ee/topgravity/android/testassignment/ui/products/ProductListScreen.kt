@@ -1,8 +1,11 @@
 package ee.topgravity.android.testassignment.ui.products
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
@@ -10,6 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import ee.topgravity.android.testassignment.data.model.Product
@@ -17,7 +23,8 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ProductListScreen(
-    viewModel: ProductListViewModel = koinViewModel()
+    viewModel: ProductListViewModel = koinViewModel(),
+    onProductClick: (Product) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -31,37 +38,47 @@ fun ProductListScreen(
         }
 
         is ProductListState.Success -> {
-            ProductList(currentState.products)
+            ProductList(currentState.products, onProductClick)
         }
     }
 }
 
 @Composable
 fun ProductList(
-    products: List<Product>
+    products: List<Product>,
+    onProductClicked: (Product) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
-        items(products) { product ->
-            ProductItem(product)
+        items(products, key = { it.id }) { product ->
+            ProductItem(product) {
+                onProductClicked(product)
+            }
         }
     }
 }
 
 @Composable
-fun ProductItem(item: Product) {
+fun ProductItem(item: Product, onClick: () -> Unit) {
     ListItem(
-        headlineContent = { Text(text = item.title) },
-        trailingContent = { AsyncImage(
-            model = item.thumbnail,
-            contentDescription = item.description,
-        ) }
+        headlineContent = { Text(item.title) },
+        trailingContent = { 
+            AsyncImage(
+                model = item.thumbnail,
+                contentDescription = item.description,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(4.dp))
+            ) 
+        },
+        modifier = Modifier.clickable(onClick = onClick)
     )
 }
 
 @Composable
-private fun LoadingContent() {
+fun LoadingContent() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -76,6 +93,6 @@ private fun ErrorContent(message: String) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = message)
+        Text(message)
     }
 }
